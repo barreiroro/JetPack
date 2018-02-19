@@ -120,7 +120,6 @@ Map map, *all_map;
 
 //Añadir variables de cada tipo. Comunicar a el grupo.
 
-//LOADS
 void LoadSheet(){
 	sheet = esat::SpriteFromFile("./Recursos/Sprites/sheet.jpg");
 	sheet_verde = esat::SpriteFromFile("./Recursos/Sprites/sheetverde.jpg");
@@ -164,8 +163,6 @@ void LoadSprites(){
 
 	fire_small = esat::SubSprite(sheet_rojo,438,636,54,51);
 }
-
-//INITS
 void SavePartsMap(float init, float end, float y){
 	/*
 		Tipos: 0 parte izquierda de la plataforma; 1 medio; 2 parte derecha
@@ -380,16 +377,553 @@ void CheckScreen(float *pos_x, float *pos_y, bool *impact, bool *platform){
 	}
 	if((*pos_x >= -45 && *pos_x + 45 <= 845) && *pos_y>= 500){
 		*platform = true;
-	}else if((*pos_x >= 95 && *pos_x <= 250) && (*pos_y>= 145 && *pos_y<= 160) ){
-		*platform= true;
-
-	}else if((*pos_x >= 310 && *pos_x <= 460) && (*pos_y>= 250 && *pos_y<= 260)){
-		*platform = true;
-	}else if((*pos_x >= 531 && *pos_x <= 720) && (*pos_y>= 98 && *pos_y<= 105)){
-		*platform = true;
-	}else{
-		*platform = false;
 	}
+}
+void InputPlayer(){
+	if(esat::IsSpecialKeyPressed(esat::kSpecialKey_Up) || esat::IsSpecialKeyPressed(esat::kSpecialKey_Left) || esat::IsSpecialKeyPressed(esat::kSpecialKey_Right)){
+		player.steps++;
+		//right
+		 if(esat::IsSpecialKeyPressed(esat::kSpecialKey_Right) && !esat::IsSpecialKeyPressed(esat::kSpecialKey_Up) && player.platform){
+			player.dir = 0;
+			player.check_dir = true;
+		}
+		//Right up
+		if(esat::IsSpecialKeyPressed(esat::kSpecialKey_Right) && esat::IsSpecialKeyPressed(esat::kSpecialKey_Up)){
+			player.dir = 1;
+
+		}
+		//left
+		 if(esat::IsSpecialKeyPressed(esat::kSpecialKey_Left) && !esat::IsSpecialKeyPressed(esat::kSpecialKey_Up) &&  !esat::IsSpecialKeyPressed(esat::kSpecialKey_Right) && player.platform){
+			player.dir = 2;
+			player.check_dir = false;
+		}
+		//Left up
+		if(esat::IsSpecialKeyPressed(esat::kSpecialKey_Left) && esat::IsSpecialKeyPressed(esat::kSpecialKey_Up)){
+			player.dir = 3;
+		}
+		//up down
+		 if(esat::IsSpecialKeyPressed(esat::kSpecialKey_Up) && !esat::IsSpecialKeyPressed(esat::kSpecialKey_Left) && !esat::IsSpecialKeyPressed(esat::kSpecialKey_Right)){
+			player.dir = 4;
+		}
+	}	else if(!player.platform){
+		player.steps++;
+		player.dir = 6;
+	} else{
+
+		player.dir = 8;
+	}
+}
+void CheckPlayer(){
+	if((player.x >= 95 && player.x <= 250) && (player.y>= 145 && player.y<= 160) ){
+		player.platform = true;
+	}else if((player.x >= 310 && player.x <= 460) && (player.y>= 250 && player.y<= 260)){
+		player.platform = true;
+	}else if((player.x >= 531 && player.x <= 720) && (player.y>= 98 && player.y<= 105)){
+		player.platform = true;
+	}else{
+		player.platform = false;
+	}
+	if( ((player.x >= 95 && player.x <= 250) && (player.y>= 230 && player.y<= 235)) || (player.x >= 310 && player.x <= 460) && (player.y>= 340 && player.y<= 345) || (player.x >= 531 && player.x <= 720) && (player.y>= 190 && player.y<= 195)){
+		player.can_up = false;
+	}else{
+		player.can_up = true;
+	}
+}
+void UpdatePlayer(){
+	CheckScreen(&player.x,&player.y,&player.can_up,&player.platform);
+	switch(player.dir){
+		case 0:
+			if(player.platform){
+				player.x += player.velocity;
+			}
+
+		break;
+		case 1:
+		if(player.can_up){
+			player.x += player.velocity;
+			player.y -= player.weight;
+		}
+		break;
+		case 2:
+			 if(player.platform){
+				player.x -= player.velocity;
+			}
+		break;
+		case 3:
+			if(player.can_up){
+			 player.x -= player.velocity;
+			 player.y -= player.weight;
+			}
+		break;
+		case 4:
+			if(player.can_up){
+				player.y -= player.weight;
+			}
+		break;
+		case 6:
+			if(!player.platform){
+				player.y += player.weight * kgravity;
+			}
+
+		break;
+	}
+}
+void Part1SPMovement(){
+	//Gestion del movimiento y colocacion de la pieza 1 por el jugador
+	//Esta es la pieza del medio, la mediana (plataforma del medio)
+	Items Part1;
+	Part1 = *(spaceshipparts + 1);
+		if((player.x <= (Part1.x) + esat::SpriteWidth((Part1.sprite))) &&
+		  (player.x + esat::SpriteWidth(*player.animation) >= (Part1.x)) &&
+		  (player.y  + esat::SpriteHeight(*player.animation) /2 <= (Part1.y) + esat::SpriteHeight((Part1.sprite))) &&
+		  (player.y  + esat::SpriteHeight(*player.animation) >= (Part1.y) + esat::SpriteHeight((Part1.sprite)) / 2) &&
+		  ((Part1.is_fuel) == true || (Part1.is_part) == true) && collecting1 == false && dropping1 == false && spaceship.num_parts == 1){
+			player.has_item1 = true;//Variable nueva
+			collecting1 = true;//Variable nueva
+			printf("Part1\n");
+		}
+		if(player.has_item1 == true && collecting1 == true){
+			(Part1.x) = player.x;
+			(Part1.y) = player.y + esat::SpriteHeight(*player.animation) - esat::SpriteHeight((Part1.sprite));//controlar posicion correcta
+		}
+		if((Part1.x) >= 495 && (Part1.x)<=500 && collecting1 == true){
+			collecting1 = false;
+			player.has_item1 = false;
+			dropping1 = true;//Variable nueva
+			if(player1_level != 5 || player2_level != 5){
+				(Part1.x) = 495;
+			}
+			if(player1_level == 5 || player2_level == 5){
+				(Part1.x) = 507;
+			}
+		}
+		if(dropping1 == true){
+			(Part1.y) +=5;
+		}
+		if((Part1.y) >= 463 && (Part1.num_part) == 1 && dropping1 == true){
+			dropping1 = false;
+			if(player1_level != 5 || player2_level != 5){
+				(Part1.x) = 495;
+			}
+			if(player1_level == 5 || player2_level == 5){
+				(Part1.x) = 507;
+			}
+			(Part1.y) = 467;
+			spaceship.num_parts=2;
+      if(g_player_one_turn == true){
+      player1_score += 100;
+      }else{
+      player2_score += 100;
+      }
+		}
+	*(spaceshipparts + 1) = Part1;
+}
+void Part2SPMovement(){
+	//Gestion del movimiento y colocacion de la pieza 1 por el jugador
+	//Esta es la pieza de arriba del todo, la pequeña(plataforma de la izquierda)
+	Items Part2;
+	Part2 = *(spaceshipparts + 2);
+
+		if((player.x <= (Part2.x) + esat::SpriteWidth((Part2.sprite))) &&
+		  (player.x + esat::SpriteWidth(*player.animation) >= (Part2.x)) &&
+		  (player.y  + esat::SpriteHeight(*player.animation) /2 <= (Part2.y) + esat::SpriteHeight((Part2.sprite))) &&
+		  (player.y  + esat::SpriteHeight(*player.animation) >= (Part2.y) + esat::SpriteHeight((Part2.sprite)) / 2) &&
+		  ((Part2.is_fuel) == true || (Part2.is_part) == true) && collecting2 == false && dropping2 == false && spaceship.num_parts == 2){
+			player.has_item2 = true;//Variable nueva
+			collecting2 = true;//Variable nueva
+			printf("Part1\n");
+		}
+		if(player.has_item2 == true && collecting2 == true){
+			(Part2.x) = player.x;
+			(Part2.y) = player.y + esat::SpriteHeight(*player.animation) - esat::SpriteHeight((Part2.sprite));//controlar posicion correcta
+		}
+		if((Part2.x) >=495 && (Part2.x)<=500 && collecting2 == true){
+			collecting2 = false;
+			player.has_item2 = false;
+			dropping2 = true;//Variable nueva
+			if((player1_level == 1 || player1_level == 5) || (player2_level == 1 || player2_level == 5)){
+				(Part2.x) = 507;
+			}
+						if(player1_level == 9 || player2_level == 9){
+				(Part2.x) = 493;
+			}
+				if(player1_level == 13 || player2_level == 13){
+				(Part2.x) = 504;
+			}
+		}
+		if(dropping2 == true){
+			(Part2.y) +=5;
+		}
+		if((Part2.y) >= 409 && (Part2.num_part) == 2 && dropping2 == true){
+			dropping2 = false;
+		if((player1_level == 1 || player1_level == 5) || (player2_level == 1 || player2_level == 5)){
+				(Part2.x) = 507;
+			}
+			if(player1_level == 9 || player2_level == 9){
+				(Part2.x) = 493;
+			}
+			if(player1_level == 13 || player2_level == 13){
+				(Part2.x) = 504;
+			}
+			(Part2.y) = 417;
+			spaceship.num_parts=3;
+      if(g_player_one_turn == true){
+      player1_score += 100;
+      }else{
+      player2_score += 100;
+      }
+		}
+	*(spaceshipparts + 2) = Part2;
+}
+void FuelGeneration(){
+	int aux;
+	if(spaceship.num_parts == 3 && fuelcounter == false){
+		aux = rand()%100;
+		if(aux <= 10){
+			fuelcounter = true;
+			fuel.x = rand()%(kwindow_x-esat::SpriteWidth(fuel.sprite));
+			fuel.y = 0;
+		}
+	}	
+}
+void FuelMovement(){
+	if(fuelcounter == true){
+
+		fuel.y += 5;
+
+		if((fuel.y >= 175 && fuel.y <= 178) && (fuel.x >= 95 && fuel.x <= 250)){
+			fuel.y = 175;//izquierda
+		}
+		if((fuel.y >= 282 && fuel.y <= 285) && (fuel.x >= 310 && fuel.x <= 460)){
+			fuel.y = 282;//medio
+		}
+		if(fuel.y <= 100 && (fuel.x >= 531 && fuel.x <= kwindow_x)){
+			fuel.y = 100;//derecha
+		}
+		if(fuel.y >= 532 && (fuel.x >= 0 && fuel.x <= kwindow_x - esat::SpriteWidth(fuel.sprite))){
+			fuel.y = 532;//suelo abajo
+		}
+	}
+}
+void CollectingFuel(){
+	if(fuelcounter == true){
+		if((player.x <= (fuel.x) + esat::SpriteWidth((fuel.sprite))) &&
+		  (player.x + esat::SpriteWidth(*player.animation) >= (fuel.x)) && 
+		  (player.y  + esat::SpriteHeight(*player.animation) /2 <= (fuel.y) + esat::SpriteHeight((fuel.sprite))) && 
+		  (player.y  + esat::SpriteHeight(*player.animation) >= (fuel.y) + esat::SpriteHeight((fuel.sprite)) / 2) &&
+		  (fuel.is_fuel) == true){
+			player.has_fuel = true;
+			collecting3 = true;
+		}
+		if(player.has_fuel == true && collecting3 == true){
+			(fuel.x) = player.x;
+			(fuel.y) = player.y + esat::SpriteHeight(*player.animation) - esat::SpriteHeight((fuel.sprite));//controlar posicion correcta
+		}
+		if((fuel.x) >= 495 && (fuel.x)<=500 && collecting3 == true){
+			collecting3 = false;
+			player.has_fuel = false;
+			dropping3 = true;
+			fuel.x = 495;
+		}
+		if(dropping3 == true){
+			(fuel.y) +=5;
+		}
+		if((fuel.y) >= 517){
+			dropping3 = false;
+			fuelcounter = false;
+			fuel.y = 517;
+			spaceship.num_fuel++;
+		}
+	}
+}
+void DrawBackground(){
+	for(int i = 0; i < g_counter_map; ++i){
+		map = *(all_map + i);
+		if(map.init == 24){
+			esat::DrawSprite(*(map.sprite + map.type), map.x,map.y);
+		}else{
+			esat::DrawSprite(*(map.sprite + map.type + 3), map.x,map.y);
+		}
+
+	}
+}
+void DrawPlayerUpDownRight(){
+	if(player.steps < 4){
+					esat::DrawSprite(*(player.animation + 12), player.x,player.y);
+				}
+				if (player.steps >= 4 && player.steps  < 8){
+					esat::DrawSprite(*(player.animation + 13), player.x,player.y);
+				}
+				if (player.steps >= 8 && player.steps  < 12){
+					esat::DrawSprite(*(player.animation + 14), player.x,player.y);
+				}
+				if (player.steps >= 12 && player.steps  < 16){
+					esat::DrawSprite(*(player.animation + 15), player.x,player.y);
+				}
+				if (player.steps >= 16 ){
+					player.steps = 0;
+					esat::DrawSprite(*(player.animation + 12), player.x,player.y);
+				}
+}
+void DrawPlayerUpDownLeft(){
+	if(player.steps < 4){
+					esat::DrawSprite(*(player.animation + 8), player.x,player.y);
+				}
+				if (player.steps >= 4 && player.steps  < 8){
+					esat::DrawSprite(*(player.animation + 9), player.x,player.y);
+				}
+				if (player.steps >= 8 && player.steps  < 12){
+					esat::DrawSprite(*(player.animation + 10), player.x,player.y);
+				}
+				if (player.steps >= 12 && player.steps < 16){
+					esat::DrawSprite(*(player.animation + 11), player.x,player.y);
+				}
+				if (player.steps >= 16 ){
+					player.steps = 0;
+					esat::DrawSprite(*(player.animation + 8), player.x,player.y);
+				}
+}
+void DrawPlayer(){
+	switch(player.dir){
+
+		case 0:
+			if(player.steps < 4){
+				esat::DrawSprite(*(player.animation + 4), player.x,player.y);
+			}
+			if (player.steps >= 4 && player.steps  < 8){
+				esat::DrawSprite(*(player.animation + 5), player.x,player.y);
+			}
+			if (player.steps >= 8 && player.steps  < 12){
+				esat::DrawSprite(*(player.animation + 6), player.x,player.y);
+			}
+			if (player.steps >= 12 && player.steps < 16){
+				esat::DrawSprite(*(player.animation + 7), player.x,player.y);
+			}
+			if (player.steps >= 16 ){
+				player.steps = 0;
+				esat::DrawSprite(*(player.animation + 4), player.x,player.y);
+			}
+		break;
+		case 1:
+			DrawPlayerUpDownRight();
+		break;
+		case 2:
+		if(player.steps < 4){
+				esat::DrawSprite(*(player.animation + 0), player.x,player.y);
+			}
+			if (player.steps >= 4 && player.steps  < 8){
+				esat::DrawSprite(*(player.animation + 1), player.x,player.y);
+			}
+			if (player.steps >= 8 && player.steps  < 12){
+				esat::DrawSprite(*(player.animation + 2), player.x,player.y);
+			}
+			if (player.steps >= 12 && player.steps < 16){
+				esat::DrawSprite(*(player.animation + 3), player.x,player.y);
+			}
+			if (player.steps >= 16 ){
+				player.steps = 0;
+				esat::DrawSprite(*(player.animation + 0), player.x,player.y);
+			}
+
+		break;
+		case 3:
+			DrawPlayerUpDownLeft();
+		break;
+		case 4:
+			if(!player.check_dir){
+				DrawPlayerUpDownLeft();
+			}else{
+				DrawPlayerUpDownRight();
+			}
+
+		break;
+		case 6:
+			if(!player.check_dir){
+				DrawPlayerUpDownLeft();
+			}else{
+				DrawPlayerUpDownRight();
+			}
+		break;
+		case 8:
+			if(!player.check_dir){
+				esat::DrawSprite(*(player.animation + 0), player.x,player.y);
+				player.steps = 0;
+			}else{
+					esat::DrawSprite(*(player.animation + 4), player.x,player.y);
+					player.steps = 0;
+			}
+	}
+}
+void DrawShipParts(){
+	//Dibuja las piezas de la nave durante el gameplay
+	esat::DrawSprite((*(spaceshipparts + 0)).sprite, (*(spaceshipparts + 0)).x,(*(spaceshipparts + 0)).y);
+	esat::DrawSprite((*(spaceshipparts + 1)).sprite, (*(spaceshipparts + 1)).x,(*(spaceshipparts + 1)).y);
+	esat::DrawSprite((*(spaceshipparts + 2)).sprite, (*(spaceshipparts + 2)).x,(*(spaceshipparts + 2)).y);
+}
+void DrawFuel(){
+	if(fuelcounter == true){
+		esat::DrawSprite(fuel.sprite, fuel.x, fuel.y);
+	}
+}
+void DrawShipPartsAnimation(){
+	//Se encarga de dibujar los sprites durante la animacion
+	esat::DrawSprite((*(spaceshipparts + 0)).sprite, (*(spaceshipparts + 0)).x,(*(spaceshipparts + 0)).y);
+	esat::DrawSprite((*(spaceshipparts + 1)).sprite, (*(spaceshipparts + 1)).x,(*(spaceshipparts + 1)).y);
+	esat::DrawSprite((*(spaceshipparts + 2)).sprite, (*(spaceshipparts + 2)).x,(*(spaceshipparts + 2)).y);
+	if((*(spaceshipparts + 3)).y <= 510){
+		if(g_firecount%2==0){
+			esat::DrawSprite((*(spaceshipparts + 3)).sprite, (*(spaceshipparts + 3)).x, (*(spaceshipparts + 3)).y);
+		}else{
+			esat::DrawSprite(fire_small, (*(spaceshipparts + 3)).x, (*(spaceshipparts + 3)).y);
+		}
+	}
+}
+void ShipAnimation(){
+	//Se llamará dentro del CheckLevel() y se encarga de hacer la animacion de cambio de nivel
+	bool up = true;
+	bool down = false;
+
+	if(spaceship.num_parts == 3 && spaceship.num_fuel == 6 &&
+		player.x + esat::SpriteWidth(*(player.animation)) >= (*(spaceshipparts + 0)).x &&
+		player.x <= (*(spaceshipparts + 0)).x + esat::SpriteWidth((*(spaceshipparts + 0)).sprite) &&
+		player.y >  (*(spaceshipparts + 2)).y && player.y < (*(spaceshipparts + 0)).y){
+		spaceship.do_animation = true;
+		g_firecount = 0;
+		while(spaceship.do_animation == true && up == true && down == false){
+			(*(spaceshipparts + 0)).y -= 5;
+			(*(spaceshipparts + 1)).y -= 5;
+			(*(spaceshipparts + 2)).y -= 5;
+			(*(spaceshipparts + 3)).y -= 5;
+			if((*(spaceshipparts + 2)).y <= 150){
+				(*(spaceshipparts + 0)).y = 162;
+				(*(spaceshipparts + 1)).y = 267;
+				(*(spaceshipparts + 2)).y = 517;
+				(*(spaceshipparts + 3)).y = 577;
+				up = false;
+				down = true;
+			}
+			//DrawBackground();
+			DrawShipPartsAnimation();
+			g_firecount ++;
+		}
+		while(spaceship.do_animation == true && up == false && down == true){
+			(*(spaceshipparts + 0)).y += 5;
+			(*(spaceshipparts + 1)).y += 5;
+			(*(spaceshipparts + 2)).y += 5;
+			(*(spaceshipparts + 3)).y += 5;
+			if((*(spaceshipparts + 0)).y  >= 517){
+				(*(spaceshipparts + 0)).y = 162;
+				(*(spaceshipparts + 1)).y = 267;
+				(*(spaceshipparts + 2)).y = 517;
+				(*(spaceshipparts + 3)).y = 577;
+				up = false;
+				down = true;
+			}
+			//DrawBackground();
+			DrawShipPartsAnimation();
+			g_firecount ++;
+		}
+	}
+}
+void HUD(){
+
+	/**g_cadena1 = &player1.score;
+	*g_cadena2 = &player2.score;
+	*g_cadena3 = &g_high_score;*/
+
+	if(g_player_one_turn == true){				//high-score
+		if(g_high_score < player1_score){
+		g_high_score = player1_score;
+	}else{
+		if(g_high_score < player2_score){
+			g_high_score = player2_score;
+		}
+	}
+	}
+  esat::DrawSetTextSize(30);
+	esat::DrawSetFillColor(255, 255, 255);	//white color
+	esat::DrawText(40, 30, "1UP");
+	esat::DrawText(700, 30, "2UP");
+	esat::DrawText(350, 60, g_cadena3);		//high-score
+
+	if(g_player_one_turn == true){
+		esat::DrawSprite(hud_lives, 150, 5);
+		esat::DrawText(120, 30, g_cadena4);		//player 1 lives
+	}else{
+		esat::DrawSprite(hud_lives, 610, 5);
+		esat::DrawText(650, 30, g_cadena5);		//player 2 lives
+	}
+
+ 	esat::DrawSetFillColor(255, 255, 0);	//yellow color
+	esat::DrawText(20, 60, g_cadena1);		//player 1 score
+	esat::DrawText(700, 60, g_cadena2);		//player 2 score
+
+	esat::DrawSetFillColor(37, 109, 123);	//blue/green color
+	esat::DrawText(330, 30, "High-Score");
+}
+void Load_Level(int level_){
+
+	if(g_player_one_turn == true){		//player 1
+		player1_level++;
+		player1_score += 250;
+		//Reset_Player(player1);
+
+	}else{								//player 2
+		player2_level++;
+		player2_score += 250;
+		//Reset_Player(player2);
+
+	}
+	if(g_player_one_turn == true){	//checks player
+			InitShipParts(player1_level);
+		}else{
+			InitShipParts(player2_level);
+		}
+}
+void Check_Level(){
+
+	if(spaceship.y == 50){		//ship leaves, next level
+		g_next_level = true;
+		if(g_player_one_turn == true){	//checks player
+			Load_Level(player1_level);
+		}else{
+			Load_Level(player2_level);
+		}
+	}
+}
+void Player_dead(){
+	if(player.alive == false){
+
+		if(die_counter < 76){
+			player.x = -100;
+			player.y = -100;
+		die_counter++;
+		printf("%d\n", die_counter);
+
+		}
+
+		if(die_counter > 75){
+			die_counter = 0;
+			if(g_player_one_turn == true){
+				player1_lives--;
+				g_player_one_turn = false;
+			}else{
+				player2_lives--;
+				g_player_one_turn = true;
+
+			}
+
+			Reset_Player();
+		}
+
+	}
+}
+void Memory_Allocation(){
+	g_cadena1 = (char*)malloc(6 * sizeof(char));
+	g_cadena2 = (char*)malloc(6 * sizeof(char));
+	g_cadena3 = (char*)malloc(6 * sizeof(char));
+	g_cadena4 = (char*)malloc(1 * sizeof(char));
+	g_cadena5 = (char*)malloc(1 * sizeof(char));
 }
 Enemy CheckEnemyCollide(Enemy enemy){
 
@@ -444,9 +978,10 @@ Enemy PatronBolas(Enemy enemy,int (*Vx),int (*Vy)){
 	int Random,Random1 = 0;
 	Random = rand()%50;
 
-	
+	//if(Random == 10){
 		Random1 = rand()%2;
-	
+	//}
+
 	if(Random1 == 1){
 		aux = enemy;
 		enemy = PatronSimple(aux,&(*Vx),&(*Vy));
@@ -594,6 +1129,8 @@ Enemy CheckEnemy(Enemy enemy){
 	return enemy;
 }
 Enemy InitLevel(Enemy enemy,int j = 8){
+  /////////////////FALTAN LOS COLORES Y SPRITES////////////////
+	//enemy.animation = (esat::SpriteHandle*) malloc(2*sizeof(esat::SpriteHandle));
 	player.level = 1;
 
 	switch(player.level){
@@ -891,599 +1428,6 @@ Enemy InitLevel(Enemy enemy,int j = 8){
 	}
 	return enemy;
 }
-void InitEnemies(){
-	for (int i = 0; i < 8; ++i)
-	{
-  	*(p_enemy + i) = InitLevel(aux,i);
-  	printf("%d\n",i );
-	}
-}
-
-//CHECKS
-void InputPlayer(){
-	if(esat::IsSpecialKeyPressed(esat::kSpecialKey_Up) || esat::IsSpecialKeyPressed(esat::kSpecialKey_Left) || esat::IsSpecialKeyPressed(esat::kSpecialKey_Right)){
-		player.steps++;
-		//right
-		 if(esat::IsSpecialKeyPressed(esat::kSpecialKey_Right) && !esat::IsSpecialKeyPressed(esat::kSpecialKey_Up) ){
-			player.dir = 0;
-			player.check_dir = true;
-		}
-		//Right up
-		if(esat::IsSpecialKeyPressed(esat::kSpecialKey_Right) && esat::IsSpecialKeyPressed(esat::kSpecialKey_Up)){
-			player.dir = 1;
-
-		}
-		//left
-		 if(esat::IsSpecialKeyPressed(esat::kSpecialKey_Left) && !esat::IsSpecialKeyPressed(esat::kSpecialKey_Up) &&  !esat::IsSpecialKeyPressed(esat::kSpecialKey_Right)){
-			player.dir = 2;
-			player.check_dir = false;
-		}
-		//Left up
-		if(esat::IsSpecialKeyPressed(esat::kSpecialKey_Left) && esat::IsSpecialKeyPressed(esat::kSpecialKey_Up)){
-			player.dir = 3;
-		}
-		//up down
-		 if(esat::IsSpecialKeyPressed(esat::kSpecialKey_Up) && !esat::IsSpecialKeyPressed(esat::kSpecialKey_Left) && !esat::IsSpecialKeyPressed(esat::kSpecialKey_Right)){
-			player.dir = 4;
-		}
-	}	else if(!player.platform){
-		player.steps++;
-		player.dir = 6;
-	} else{
-
-		player.dir = 8;
-	}
-}
-void CheckPlayer(){
-	if( ((player.x >= 95 && player.x <= 250) && (player.y>= 230 && player.y<= 235)) || (player.x >= 310 && player.x <= 460) && (player.y>= 340 && player.y<= 345) || (player.x >= 531 && player.x <= 720) && (player.y>= 190 && player.y<= 195)){
-		player.can_up = false;
-	}else{
-		player.can_up = true;
-	}
-}
-void Load_Level(int level_){
-
-	if(g_player_one_turn == true){		//player 1
-		player1_level++;
-		player1_score += 250;
-		//Reset_Player(player1);
-
-	}else{								//player 2
-		player2_level++;
-		player2_score += 250;
-		//Reset_Player(player2);
-
-	}
-	if(g_player_one_turn == true){	//checks player
-			InitShipParts(player1_level);
-		}else{
-			InitShipParts(player2_level);
-		}
-}
-void Check_Level(){
-	if(spaceship.y == 50){		//ship leaves, next level
-		g_next_level = true;
-		if(g_player_one_turn == true){	//checks player
-			Load_Level(player1_level);
-		}else{
-			Load_Level(player2_level);
-		}
-	}
-}
-void EnemyChecking(){
-	for (int i = 0; i < 8; ++i)
-	{
-		aux = *(p_enemy + i);
-		aux = CheckEnemy(aux);
-		aux = CheckEnemyCollide(aux);
-		printf("CheckEnemy %d\n",i);
-
-		CheckScreen(&aux.x,&aux.y,&aux.impact,&aux.platform);
-
-
-		if(!aux.alive){
-			aux = InitLevel(aux);
-		}
-
-
-	*(p_enemy + i) = aux;
-	}
-
-}
-//UPDATE
-void UpdatePlayer(){
-	CheckScreen(&player.x,&player.y,&player.can_up,&player.platform);
-	switch(player.dir){
-		case 0:
-			
-				player.x += player.velocity;
-			
-
-		break;
-		case 1:
-		if(player.can_up){
-			player.x += player.velocity;
-			player.y -= player.weight;
-		}
-		break;
-		case 2:
-			
-				player.x -= player.velocity;
-			
-		break;
-		case 3:
-			if(player.can_up){
-			 player.x -= player.velocity;
-			 player.y -= player.weight;
-			}
-		break;
-		case 4:
-			if(player.can_up){
-				player.y -= player.weight;
-			}
-		break;
-		case 6:
-			if(!player.platform){
-				player.y += player.weight * kgravity;
-			}
-
-		break;
-	}
-}
-void Part1SPMovement(){
-	//Gestion del movimiento y colocacion de la pieza 1 por el jugador
-	//Esta es la pieza del medio, la mediana (plataforma del medio)
-	Items Part1;
-	Part1 = *(spaceshipparts + 1);
-		if((player.x <= (Part1.x) + esat::SpriteWidth((Part1.sprite))) &&
-		  (player.x + esat::SpriteWidth(*player.animation) >= (Part1.x)) &&
-		  (player.y  + esat::SpriteHeight(*player.animation) /2 <= (Part1.y) + esat::SpriteHeight((Part1.sprite))) &&
-		  (player.y  + esat::SpriteHeight(*player.animation) >= (Part1.y) + esat::SpriteHeight((Part1.sprite)) / 2) &&
-		  ((Part1.is_fuel) == true || (Part1.is_part) == true) && collecting1 == false && dropping1 == false && spaceship.num_parts == 1){
-			player.has_item1 = true;//Variable nueva
-			collecting1 = true;//Variable nueva
-			printf("Part1\n");
-		}
-		if(player.has_item1 == true && collecting1 == true){
-			(Part1.x) = player.x;
-			(Part1.y) = player.y + esat::SpriteHeight(*player.animation) - esat::SpriteHeight((Part1.sprite));//controlar posicion correcta
-		}
-		if((Part1.x) >= 495 && (Part1.x)<=500 && collecting1 == true){
-			collecting1 = false;
-			player.has_item1 = false;
-			dropping1 = true;//Variable nueva
-			if(player1_level != 5 || player2_level != 5){
-				(Part1.x) = 495;
-			}
-			if(player1_level == 5 || player2_level == 5){
-				(Part1.x) = 507;
-			}
-		}
-		if(dropping1 == true){
-			(Part1.y) +=5;
-		}
-		if((Part1.y) >= 463 && (Part1.num_part) == 1 && dropping1 == true){
-			dropping1 = false;
-			if(player1_level != 5 || player2_level != 5){
-				(Part1.x) = 495;
-			}
-			if(player1_level == 5 || player2_level == 5){
-				(Part1.x) = 507;
-			}
-			(Part1.y) = 467;
-			spaceship.num_parts=2;
-      if(g_player_one_turn == true){
-      player1_score += 100;
-      }else{
-      player2_score += 100;
-      }
-		}
-	*(spaceshipparts + 1) = Part1;
-}
-void Part2SPMovement(){
-	//Gestion del movimiento y colocacion de la pieza 1 por el jugador
-	//Esta es la pieza de arriba del todo, la pequeña(plataforma de la izquierda)
-	Items Part2;
-	Part2 = *(spaceshipparts + 2);
-
-		if((player.x <= (Part2.x) + esat::SpriteWidth((Part2.sprite))) &&
-		  (player.x + esat::SpriteWidth(*player.animation) >= (Part2.x)) &&
-		  (player.y  + esat::SpriteHeight(*player.animation) /2 <= (Part2.y) + esat::SpriteHeight((Part2.sprite))) &&
-		  (player.y  + esat::SpriteHeight(*player.animation) >= (Part2.y) + esat::SpriteHeight((Part2.sprite)) / 2) &&
-		  ((Part2.is_fuel) == true || (Part2.is_part) == true) && collecting2 == false && dropping2 == false && spaceship.num_parts == 2){
-			player.has_item2 = true;//Variable nueva
-			collecting2 = true;//Variable nueva
-			printf("Part1\n");
-		}
-		if(player.has_item2 == true && collecting2 == true){
-			(Part2.x) = player.x;
-			(Part2.y) = player.y + esat::SpriteHeight(*player.animation) - esat::SpriteHeight((Part2.sprite));//controlar posicion correcta
-		}
-		if((Part2.x) >=495 && (Part2.x)<=500 && collecting2 == true){
-			collecting2 = false;
-			player.has_item2 = false;
-			dropping2 = true;//Variable nueva
-			if((player1_level == 1 || player1_level == 5) || (player2_level == 1 || player2_level == 5)){
-				(Part2.x) = 507;
-			}
-						if(player1_level == 9 || player2_level == 9){
-				(Part2.x) = 493;
-			}
-				if(player1_level == 13 || player2_level == 13){
-				(Part2.x) = 504;
-			}
-		}
-		if(dropping2 == true){
-			(Part2.y) +=5;
-		}
-		if((Part2.y) >= 409 && (Part2.num_part) == 2 && dropping2 == true){
-			dropping2 = false;
-		if((player1_level == 1 || player1_level == 5) || (player2_level == 1 || player2_level == 5)){
-				(Part2.x) = 507;
-			}
-			if(player1_level == 9 || player2_level == 9){
-				(Part2.x) = 493;
-			}
-			if(player1_level == 13 || player2_level == 13){
-				(Part2.x) = 504;
-			}
-			(Part2.y) = 417;
-			spaceship.num_parts=3;
-      if(g_player_one_turn == true){
-      player1_score += 100;
-      }else{
-      player2_score += 100;
-      }
-		}
-	*(spaceshipparts + 2) = Part2;
-}
-void FuelGeneration(){
-	int aux;
-	if(spaceship.num_parts == 3 && fuelcounter == false){
-		aux = rand()%100;
-		if(aux <= 10){
-			fuelcounter = true;
-			fuel.x = rand()%(kwindow_x-esat::SpriteWidth(fuel.sprite));
-			fuel.y = 0;
-		}
-	}	
-}
-void FuelMovement(){
-	if(fuelcounter == true){
-
-		fuel.y += 5;
-
-		if((fuel.y >= 175 && fuel.y <= 178) && (fuel.x >= 95 && fuel.x <= 250)){
-			fuel.y = 175;//izquierda
-		}
-		if((fuel.y >= 282 && fuel.y <= 285) && (fuel.x >= 310 && fuel.x <= 460)){
-			fuel.y = 282;//medio
-		}
-		if(fuel.y <= 100 && (fuel.x >= 531 && fuel.x <= kwindow_x)){
-			fuel.y = 100;//derecha
-		}
-		if(fuel.y >= 532 && (fuel.x >= 0 && fuel.x <= kwindow_x - esat::SpriteWidth(fuel.sprite))){
-			fuel.y = 532;//suelo abajo
-		}
-	}
-}
-void CollectingFuel(){
-	if(fuelcounter == true){
-		if((player.x <= (fuel.x) + esat::SpriteWidth((fuel.sprite))) &&
-		  (player.x + esat::SpriteWidth(*player.animation) >= (fuel.x)) && 
-		  (player.y  + esat::SpriteHeight(*player.animation) /2 <= (fuel.y) + esat::SpriteHeight((fuel.sprite))) && 
-		  (player.y  + esat::SpriteHeight(*player.animation) >= (fuel.y) + esat::SpriteHeight((fuel.sprite)) / 2) &&
-		  (fuel.is_fuel) == true){
-			player.has_fuel = true;
-			collecting3 = true;
-		}
-		if(player.has_fuel == true && collecting3 == true){
-			(fuel.x) = player.x;
-			(fuel.y) = player.y + esat::SpriteHeight(*player.animation) - esat::SpriteHeight((fuel.sprite));//controlar posicion correcta
-		}
-		if((fuel.x) >= 495 && (fuel.x)<=500 && collecting3 == true){
-			collecting3 = false;
-			player.has_fuel = false;
-			dropping3 = true;
-			fuel.x = 495;
-		}
-		if(dropping3 == true){
-			(fuel.y) +=5;
-		}
-		if((fuel.y) >= 517){
-			dropping3 = false;
-			fuelcounter = false;
-			fuel.y = 517;
-			spaceship.num_fuel++;
-		}
-	}
-}
-
-//DRAW
-void DrawBackground(){
-	for(int i = 0; i < g_counter_map; ++i){
-		map = *(all_map + i);
-		if(map.init == 24){
-			esat::DrawSprite(*(map.sprite + map.type), map.x,map.y);
-		}else{
-			esat::DrawSprite(*(map.sprite + map.type + 3), map.x,map.y);
-		}
-
-	}
-}
-void DrawPlayerUpDownRight(){
-	if(player.steps < 4){
-					esat::DrawSprite(*(player.animation + 12), player.x,player.y);
-				}
-				if (player.steps >= 4 && player.steps  < 8){
-					esat::DrawSprite(*(player.animation + 13), player.x,player.y);
-				}
-				if (player.steps >= 8 && player.steps  < 12){
-					esat::DrawSprite(*(player.animation + 14), player.x,player.y);
-				}
-				if (player.steps >= 12 && player.steps  < 16){
-					esat::DrawSprite(*(player.animation + 15), player.x,player.y);
-				}
-				if (player.steps >= 16 ){
-					player.steps = 0;
-					esat::DrawSprite(*(player.animation + 12), player.x,player.y);
-				}
-}
-void DrawPlayerUpDownLeft(){
-	if(player.steps < 4){
-					esat::DrawSprite(*(player.animation + 8), player.x,player.y);
-				}
-				if (player.steps >= 4 && player.steps  < 8){
-					esat::DrawSprite(*(player.animation + 9), player.x,player.y);
-				}
-				if (player.steps >= 8 && player.steps  < 12){
-					esat::DrawSprite(*(player.animation + 10), player.x,player.y);
-				}
-				if (player.steps >= 12 && player.steps < 16){
-					esat::DrawSprite(*(player.animation + 11), player.x,player.y);
-				}
-				if (player.steps >= 16 ){
-					player.steps = 0;
-					esat::DrawSprite(*(player.animation + 8), player.x,player.y);
-				}
-}
-void DrawPlayer(){
-	switch(player.dir){
-
-		case 0:
-			if(player.platform){
-				if(player.steps < 4){
-				esat::DrawSprite(*(player.animation + 4), player.x,player.y);
-			}
-			if (player.steps >= 4 && player.steps  < 8){
-				esat::DrawSprite(*(player.animation + 5), player.x,player.y);
-			}
-			if (player.steps >= 8 && player.steps  < 12){
-				esat::DrawSprite(*(player.animation + 6), player.x,player.y);
-			}
-			if (player.steps >= 12 && player.steps < 16){
-				esat::DrawSprite(*(player.animation + 7), player.x,player.y);
-			}
-			if (player.steps >= 16 ){
-				player.steps = 0;
-				esat::DrawSprite(*(player.animation + 4), player.x,player.y);
-			}
-			}else{
-				DrawPlayerUpDownRight();
-			}
-			
-		break;
-		case 1:
-			DrawPlayerUpDownRight();
-		break;
-		case 2:
-		if(player.platform){
-				if(player.steps < 4){
-				esat::DrawSprite(*(player.animation + 0), player.x,player.y);
-			}
-			if (player.steps >= 4 && player.steps  < 8){
-				esat::DrawSprite(*(player.animation + 1), player.x,player.y);
-			}
-			if (player.steps >= 8 && player.steps  < 12){
-				esat::DrawSprite(*(player.animation + 2), player.x,player.y);
-			}
-			if (player.steps >= 12 && player.steps < 16){
-				esat::DrawSprite(*(player.animation + 3), player.x,player.y);
-			}
-			if (player.steps >= 16 ){
-				player.steps = 0;
-				esat::DrawSprite(*(player.animation + 0), player.x,player.y);
-			}
-		}else{
-			DrawPlayerUpDownLeft();
-		}
-	
-
-		break;
-		case 3:
-			DrawPlayerUpDownLeft();
-		break;
-		case 4:
-			if(!player.check_dir){
-				DrawPlayerUpDownLeft();
-			}else{
-				DrawPlayerUpDownRight();
-			}
-
-		break;
-		case 6:
-			if(!player.check_dir){
-				DrawPlayerUpDownLeft();
-			}else{
-				DrawPlayerUpDownRight();
-			}
-		break;
-		case 8:
-			if(!player.check_dir){
-				esat::DrawSprite(*(player.animation + 0), player.x,player.y);
-				player.steps = 0;
-			}else{
-					esat::DrawSprite(*(player.animation + 4), player.x,player.y);
-					player.steps = 0;
-			}
-	}
-}
-void DrawShipParts(){
-	//Dibuja las piezas de la nave durante el gameplay
-	esat::DrawSprite((*(spaceshipparts + 0)).sprite, (*(spaceshipparts + 0)).x,(*(spaceshipparts + 0)).y);
-	esat::DrawSprite((*(spaceshipparts + 1)).sprite, (*(spaceshipparts + 1)).x,(*(spaceshipparts + 1)).y);
-	esat::DrawSprite((*(spaceshipparts + 2)).sprite, (*(spaceshipparts + 2)).x,(*(spaceshipparts + 2)).y);
-}
-void DrawFuel(){
-	if(fuelcounter == true){
-		esat::DrawSprite(fuel.sprite, fuel.x, fuel.y);
-	}
-}
-void DrawShipPartsAnimation(){
-	//Se encarga de dibujar los sprites durante la animacion
-	esat::DrawSprite((*(spaceshipparts + 0)).sprite, (*(spaceshipparts + 0)).x,(*(spaceshipparts + 0)).y);
-	esat::DrawSprite((*(spaceshipparts + 1)).sprite, (*(spaceshipparts + 1)).x,(*(spaceshipparts + 1)).y);
-	esat::DrawSprite((*(spaceshipparts + 2)).sprite, (*(spaceshipparts + 2)).x,(*(spaceshipparts + 2)).y);
-	if((*(spaceshipparts + 3)).y <= 510){
-		if(g_firecount%2==0){
-			esat::DrawSprite((*(spaceshipparts + 3)).sprite, (*(spaceshipparts + 3)).x, (*(spaceshipparts + 3)).y);
-		}else{
-			esat::DrawSprite(fire_small, (*(spaceshipparts + 3)).x, (*(spaceshipparts + 3)).y);
-		}
-	}
-}
-void ShipAnimation(){
-	//Se llamará dentro del CheckLevel() y se encarga de hacer la animacion de cambio de nivel
-	bool up = true;
-	bool down = false;
-
-	if(spaceship.num_parts == 3 && spaceship.num_fuel == 6 &&
-		player.x + esat::SpriteWidth(*(player.animation)) >= (*(spaceshipparts + 0)).x &&
-		player.x <= (*(spaceshipparts + 0)).x + esat::SpriteWidth((*(spaceshipparts + 0)).sprite) &&
-		player.y >  (*(spaceshipparts + 2)).y && player.y < (*(spaceshipparts + 0)).y){
-		spaceship.do_animation = true;
-		g_firecount = 0;
-		while(spaceship.do_animation == true && up == true && down == false){
-			(*(spaceshipparts + 0)).y -= 5;
-			(*(spaceshipparts + 1)).y -= 5;
-			(*(spaceshipparts + 2)).y -= 5;
-			(*(spaceshipparts + 3)).y -= 5;
-			if((*(spaceshipparts + 2)).y <= 150){
-				(*(spaceshipparts + 0)).y = 162;
-				(*(spaceshipparts + 1)).y = 267;
-				(*(spaceshipparts + 2)).y = 517;
-				(*(spaceshipparts + 3)).y = 577;
-				up = false;
-				down = true;
-			}
-			DrawBackground();
-			DrawShipPartsAnimation();
-			g_firecount ++;
-		}
-		while(spaceship.do_animation == true && up == false && down == true){
-			(*(spaceshipparts + 0)).y += 5;
-			(*(spaceshipparts + 1)).y += 5;
-			(*(spaceshipparts + 2)).y += 5;
-			(*(spaceshipparts + 3)).y += 5;
-			if((*(spaceshipparts + 0)).y  >= 517){
-				(*(spaceshipparts + 0)).y = 162;
-				(*(spaceshipparts + 1)).y = 267;
-				(*(spaceshipparts + 2)).y = 517;
-				(*(spaceshipparts + 3)).y = 577;
-				up = false;
-				down = true;
-			}
-			DrawBackground();
-			DrawShipPartsAnimation();
-			g_firecount ++;
-		}
-	}
-}
-void HUD(){
-
-	/**g_cadena1 = &player1.score;
-	*g_cadena2 = &player2.score;
-	*g_cadena3 = &g_high_score;*/
-
-	if(g_player_one_turn == true){				//high-score
-		if(g_high_score < player1_score){
-		g_high_score = player1_score;
-	}else{
-		if(g_high_score < player2_score){
-			g_high_score = player2_score;
-		}
-	}
-	}
-  esat::DrawSetTextSize(30);
-	esat::DrawSetFillColor(255, 255, 255);	//white color
-	esat::DrawText(40, 30, "1UP");
-	esat::DrawText(700, 30, "2UP");
-	esat::DrawText(350, 60, g_cadena3);		//high-score
-
-	if(g_player_one_turn == true){
-		esat::DrawSprite(hud_lives, 150, 5);
-		esat::DrawText(120, 30, g_cadena4);		//player 1 lives
-	}else{
-		esat::DrawSprite(hud_lives, 610, 5);
-		esat::DrawText(650, 30, g_cadena5);		//player 2 lives
-	}
-
- 	esat::DrawSetFillColor(255, 255, 0);	//yellow color
-	esat::DrawText(20, 60, g_cadena1);		//player 1 score
-	esat::DrawText(700, 60, g_cadena2);		//player 2 score
-
-	esat::DrawSetFillColor(37, 109, 123);	//blue/green color
-	esat::DrawText(330, 30, "High-Score");
-}
-void DrawEnemies(){
-		for (int i = 0; i < 8; ++i)
-	{
-		aux = *(p_enemy + i);
-
-		esat::DrawSprite(aux.animation.A1,aux.x,aux.y);
-
-	}
-}
-void Player_dead(){
-	if(player.alive == false){
-
-		if(die_counter < 76){
-			player.x = -100;
-			player.y = -100;
-		die_counter++;
-		printf("%d\n", die_counter);
-
-		}
-
-		if(die_counter > 75){
-			die_counter = 0;
-			if(g_player_one_turn == true){
-				player1_lives--;
-				g_player_one_turn = false;
-			}else{
-				player2_lives--;
-				g_player_one_turn = true;
-
-			}
-
-			Reset_Player();
-		}
-
-	}
-}
-void Memory_Allocation(){
-	g_cadena1 = (char*)malloc(6 * sizeof(char));
-	g_cadena2 = (char*)malloc(6 * sizeof(char));
-	g_cadena3 = (char*)malloc(6 * sizeof(char));
-	g_cadena4 = (char*)malloc(1 * sizeof(char));
-	g_cadena5 = (char*)malloc(1 * sizeof(char));
-}
-
-
-	
-
-
-//FREE
 void FreePointers(){
 	free(map.sprite);
 	free(all_map);
@@ -1502,6 +1446,34 @@ void ReleaseSprites(){
 	esat::SpriteRelease(sheet_azul);
 	esat::SpriteRelease(sheet_rojo);
 	esat::SpriteRelease(sheet_rosa);
+}
+void EnemyCheking(){
+	for (int i = 0; i < 8; ++i)
+	{
+		aux = *(p_enemy + i);
+		aux = CheckEnemy(aux);
+		aux = CheckEnemyCollide(aux);
+		printf("CheckEnemy %d\n",i);
+
+		CheckScreen(&aux.x,&aux.y,&aux.impact,&aux.platform);
+
+
+		if(!aux.alive){
+			aux = InitLevel(aux);
+		}
+
+
+	*(p_enemy + i) = aux;
+	}
+}
+void DrawEnemies(){
+	for (int i = 0; i < 8; ++i)
+	{
+		aux = *(p_enemy + i);
+
+		esat::DrawSprite(aux.animation.A1,aux.x,aux.y);
+
+	}
 }
 int esat::main(int argc, char **argv) {
 
@@ -1526,13 +1498,17 @@ int esat::main(int argc, char **argv) {
   sheet_rosa = esat::SpriteFromFile("./Recursos/Sprites/sheetrosa.jpg");
   printf("Sheet Loaded\n");
 
-  
+   for (int i = 0; i < 8; ++i)
+  {
+  	*(p_enemy + i) = InitLevel(aux,i);
+  	printf("%d\n",i );
+  }
+
   Memory_Allocation();
      ///////////////INITS/////////////
   spaceshipparts = (Items*) malloc(4*sizeof(Items));
   InitMap();
   InitPlayer();
-  InitEnemies();
   InitFuel();
   InitShipParts(player.level);
   while(esat::WindowIsOpened() && !esat::IsSpecialKeyDown(esat::kSpecialKey_Escape)) {
@@ -1548,8 +1524,8 @@ int esat::main(int argc, char **argv) {
    ///////////////CHECKS/////////////
 	InputPlayer();
 	CheckPlayer();
-	EnemyChecking();
-  	Check_Level();
+	EnemyCheking();
+	Check_Level();
   	Player_dead();
   	FuelGeneration();
 
@@ -1569,6 +1545,9 @@ int esat::main(int argc, char **argv) {
 	DrawShipParts();
 	DrawFuel();
 	DrawEnemies();
+	
+
+
 
     esat::DrawClear(0,0,0);
 
